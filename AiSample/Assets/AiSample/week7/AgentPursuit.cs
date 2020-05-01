@@ -10,15 +10,26 @@ public class AgentPursuit : MonoBehaviour
     [SerializeField]
     private float _maxSpeed = 0.2f;
 
+    /// <summary>
+    /// 예측 수준입니다.
+    /// </summary>
+    [SerializeField]
+    private int _predictLevel = 10;
+
     private bool _isPursuit = false;
 
     private Vector3 _velocity = Vector3.zero;
 
+    /// <summary>
+    /// Target Agent가 이전 프레임에 있던 위치입니다.
+    /// </summary>
+    private Vector3 _preTargetPos = Vector3.zero;
+
     private void Update()
     {
-        if (Input.GetKey(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            _isPursuit = true;
+            _isPursuit = !_isPursuit;
         }
 
         if (_isPursuit)
@@ -29,12 +40,26 @@ public class AgentPursuit : MonoBehaviour
 
             // 속도를 기반으로 새로운 위치 계산.
             transform.position = transform.position + _velocity;
+
+            // 타겟의 속도를 계산하기 위해 타겟의 이전 위치를 저장
+            if (_preTargetPos != _target.position) { _preTargetPos = _target.position; }
         }
     }
 
     private Vector3 pursuit(Transform target_agent)
     {
-        return seek(target_agent.position);
+        Vector3 dir_target = Vector3.Normalize(target_agent.position - transform.position);
+
+        if (Vector3.Dot(dir_target, transform.forward) > 0 && Vector3.Dot(transform.forward, target_agent.forward) < -0.95)
+        {
+            // 타겟의 이동 방향이 자신과 거의 겹칠 경우 예측하지 않고 쫓아갑니다.
+            return seek(target_agent.position);
+        }
+        else
+        {
+            // 예측한 장소로 이동합니다.
+            return seek(_preTargetPos + ((target_agent.position - _preTargetPos) * Time.deltaTime * (float)(_predictLevel * 1000)));
+        }
     }
 
     private Vector3 seek(Vector3 target_pos)
