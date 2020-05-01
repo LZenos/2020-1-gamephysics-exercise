@@ -68,7 +68,7 @@ public class Agent : MonoBehaviour
         Vector3 distance = target_pos - transform.position;
         if (distance.sqrMagnitude > 0.005f)
         {
-            transform.forward = distance.normalized;
+            transform.forward = _velocity.normalized;
         }
 
         Vector3 desired_velocity = distance.normalized * _maxSpeed;
